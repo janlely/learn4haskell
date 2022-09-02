@@ -1106,7 +1106,7 @@ class Contestants a where
   isDead :: a -> Bool
 
 instance Contestants Knights where
-  applyAction (A a) k@(Knights h _ _) = k {kHealth = h - a}
+  applyAction (A a) k@(Knights h _ d) = k {kHealth = let x = a - d in if x > 0 then h - x else h}
   applyAction (D d) k@(Knights h _ _) = k {kHealth = h + d}
   applyAction (S s) k@(Knights _ _ d) = k {kDefence = d + s}
   applyAction Skip k = k
@@ -1122,13 +1122,14 @@ instance Contestants Monsters where
 
   isDead m = mHealth m <= 0
 
--- A : Attack
--- D : Drink
--- S : Spell
+-- A : Attack with a damage
+-- D : Drink with heal value
+-- S : Spell with defence up value
 -- R : Run away
 -- Skip : do nothing but switch turn
 data Actions = A Int | D Int | S Int| R | Skip deriving (Show)
 
+-- core fignt function
 kmFight :: Knights -> Monsters -> [Actions] -> [Actions] -> Either Knights Monsters
 kmFight k m actions1 actions2 = fight' True k m (combine (cycle actions1) (cycle actions2))
   where combine ((A a):as1) as2 = Skip : A a : combine as2 as1 -- when Attack just Skip and add a attack to the enemy
@@ -1136,7 +1137,7 @@ kmFight k m actions1 actions2 = fight' True k m (combine (cycle actions1) (cycle
         combine _ _ = error "invalid input"
 
 
-
+-- fight loop, perhaps the loop will never end
 fight' :: Bool -> Knights -> Monsters -> [Actions] -> Either Knights Monsters 
 fight' _ _ _ [] = error "no more actions"
 fight' b k m (a:as)
